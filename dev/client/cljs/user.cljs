@@ -3,6 +3,7 @@
     [untangled.client.core :as uc]
     [om.next :as om]
 
+    [large-example.ui.routing :as r]
     [large-example.core :as core]
     [large-example.ui.root :as root]
 
@@ -10,7 +11,7 @@
 
 (enable-console-print!)
 
-(reset! core/app (uc/mount @core/app root/Root "app"))
+(reset! core/app (uc/mount @core/app r/Root "app"))
 
 (defn app-state [] @(:reconciler @core/app))
 
