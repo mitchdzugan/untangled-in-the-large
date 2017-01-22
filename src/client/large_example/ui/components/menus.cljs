@@ -5,7 +5,7 @@
             [large-example.utils :as u]
             [untangled.client.cards :refer-macros [untangled-app]]
             [untangled.client.mutations :as m]
-            [untangled.i18n :refer-macros [tr trc]]
+            [untangled.i18n :refer-macros [tr trc tr-unsafe]]
             [om.dom :as dom]
             [untangled.client.core :as uc]))
 
@@ -27,7 +27,7 @@
                          (om/transact! this `[(close-all-menus {}) :menu/id])
                          (onSelect id))]
       (dom/li nil
-              (dom/a #js {:onClick clickHandler} label)))))
+              (dom/a #js {:onClick clickHandler} (tr-unsafe label))))))
 
 (defui PopupMenu
   static uc/InitialAppState
@@ -47,7 +47,7 @@
                                         (om/transact! this `[(close-all-menus {}) :menu/id])
                                         (om/transact! this `[(close-all-menus {}) (open-menu ~{:menu id}) :menu/id]))
                                       (.stopPropagation evt))
-                         :className "btn btn-default dropdown-toggle"} label
+                         :className "btn btn-default dropdown-toggle"} (tr-unsafe label)
                     (dom/span #js {:className "caret"}))
         (dom/ul #js {:className "dropdown-menu"}
                 (map (fn [i] (ui-menu-item (om/computed i {:onSelect onSelect}))) items))))))
