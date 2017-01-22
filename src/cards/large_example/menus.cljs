@@ -50,4 +50,4 @@
   "
   (untangled-app ActiveMenuRoot)
   {}
-  {:inspect-data true})                                    ; set to true to see app state
+  {:inspect-data false})                                    ; set to true to see app state

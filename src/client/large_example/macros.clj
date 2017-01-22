@@ -26,11 +26,13 @@ for the equivalent defmethod. For example:
 The following will be available in the body:
 - state : The application state atom
 - ref : The ident of the invoking component, if available
+- ast : The AST of the mutation
+- env : The complete Om Parser env
 "
-            :arglists '([sym docstring? arglist body])} defmutation [& args]
+            :arglists '([sym docstring? arglist remote-body? body])} defmutation [& args]
   (let [{:keys [sym doc arglist body]} (conform! ::mutation-args args)
         fqsym (symbol (name (ns-name *ns*)) (name sym))
-        env '{:keys [state ref]}]
+        env '{:keys [state ref ast] :as env}]
     `(defmethod untangled.client.mutations/mutate '~fqsym [~env ~'_ {:keys ~arglist}]
        {:action (fn [] ~@body)})))
 

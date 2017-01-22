@@ -9,23 +9,7 @@
             [om.dom :as dom]
             [untangled.client.core :as uc]))
 
-(defn set-popup
-  "Set the state of the given menu to open (true) or closed (false)"
-  [menu open?]
-  (assoc menu :menu/open? open?))
-
-(defmutation open-menu
-  "Open a popup menu. Params should include a :menu key with the ID of the menu to open."
-  [menu]
-  (swap! state update-in [:menus/by-id menu] set-popup true))
-
-(defmutation close-all-menus
-  "Close all open menus in the entire application. No parameters required.`"
-  [ignored]
-  (let [all-menu-ids (-> state deref :menus/by-id keys)]
-    (swap! state
-           (fn [s] (reduce (fn [st menu-id]
-                             (update-in st [:menus/by-id menu-id] set-popup false)) s all-menu-ids)))))
+(declare ui-menu-item)
 
 (defui MenuItem
   static uc/InitialAppState
@@ -44,14 +28,6 @@
                          (onSelect id))]
       (dom/li nil
               (dom/a #js {:onClick clickHandler} label)))))
-
-(defn menu-item
-  "Returns the state needed to represent a menu item."
-  [id label] (uc/initial-state MenuItem {:id id :label label}))
-
-(def ui-menu-item
-  "Make a react component that renders a menu item"
-  (om/factory MenuItem {:keyfn :menu-item/id}))
 
 (defui PopupMenu
   static uc/InitialAppState
@@ -80,9 +56,34 @@
   "Make a react component that renders a popup-menu."
   (om/factory PopupMenu {:keyfn :menu/id}))
 
+(def ui-menu-item
+  "Make a react component that renders a menu item"
+  (om/factory MenuItem {:keyfn :menu-item/id}))
+
 (defn popup-menu
   "Create the state for a popup menu. The items parameter should be a vector of `menu-item`."
   [id label items]
   (uc/initial-state PopupMenu {:id id :label label :items items}))
 
+(defn menu-item
+  "Returns the state needed to represent a menu item."
+  [id label] (uc/initial-state MenuItem {:id id :label label}))
+
+(defn- set-popup
+  "Set the state of the given menu to open (true) or closed (false)"
+  [menu open?]
+  (assoc menu :menu/open? open?))
+
+(defmutation open-menu
+  "Open a popup menu. Params should include a :menu key with the ID of the menu to open."
+  [menu]
+  (swap! state update-in [:menus/by-id menu] set-popup true))
+
+(defmutation close-all-menus
+  "Close all open menus in the entire application. No parameters required.`"
+  [ignored]
+  (let [all-menu-ids (-> state deref :menus/by-id keys)]
+    (swap! state
+           (fn [s] (reduce (fn [st menu-id]
+                             (update-in st [:menus/by-id menu-id] set-popup false)) s all-menu-ids)))))
 
