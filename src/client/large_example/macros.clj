@@ -33,7 +33,7 @@ The following will be available in the body:
 - ast : The AST of the mutation
 - env : The complete Om Parser env
 "
-            :arglists '([sym docstring? arglist remote-body? body])} defmutation [& args]
+            :arglists '([sym docstring? arglist body])} defmutation [& args]
   (let [{:keys [sym doc arglist body]} (conform! ::mutation-args args)
         fqsym (symbol (name (ns-name *ns*)) (name sym))
         env '{:keys [state ref ast] :as env}]
@@ -56,21 +56,10 @@ The following will be available in the body:
   Object
   (render [this] (dom/div nil "TODO")))
 
-(s/def ::router-args (s/cat
-                       :sym symbol?
-                       :ident-fn (constantly true)
-                       :children (s/+ symbol?)))
 
-(defmacro ^{:doc      "Generates a component with a union query that can route among the given screen, which MUST be
-in cljc files. The first screen listed will be the 'default' screen that the router will be initialized to show.
 
-- All screens *must* be in cljc files
-- All screens *must* implement InitialAppState
-- All screens *must* have a UI query
-"
-            :arglists '([sym ident-fn & screens])} defrouter [& args]
-  (let [{:keys [sym ident-fn children]} (conform! ::router-args args)
-        id (eval ident-fn)
+(defn- emit-union-element [sym ident-fn children]
+  (let [id (eval ident-fn)
         comp->kw (fn [comp] (first (id nil (untangled.client.core/get-initial-state (var-get (ns-resolve *ns* comp)) {}))))
         query (reduce (fn [q cls] (assoc q (comp->kw cls) `(om.next/get-query ~cls))) {} children)
         first-screen (first children)
@@ -87,14 +76,45 @@ in cljc files. The first screen listed will be the 'default' screen that the rou
        (~'query [~'this] ~query)
        ~'Object
        (~'render [~'this]
-         (log/info (om/get-ident ~'this))
          (let [page# (first (om.next/get-ident ~'this))]
            (case page#
              ~@render-stmt
              (om.dom/div nil (str "Cannot route: Unknown Screen " page#))))))))
 
+(defn- emit-router [router-id sym union-sym]
+  `(om/defui ~sym
+     ~'static untangled.client.core/InitialAppState
+     (~'initial-state [~'clz ~'params] {:id ~router-id :current-route (uc/get-initial-state ~union-sym {})})
+     ~'static om.next/Ident
+     (~'ident [~'this ~'props] [:routers/by-id (:id ~'props)])
+     ~'static om.next/IQuery
+     (~'query [~'this] [{:current-route (om/get-query ~union-sym)}])
+     ~'Object
+     (~'render [~'this]
+       ((om.next/factory ~union-sym) (:current-route (om/props ~'this))))))
+
+(s/def ::router-args (s/cat
+                       :sym symbol?
+                       :router-id keyword?
+                       :ident-fn (constantly true)
+                       :children (s/+ symbol?)))
+
+(defmacro ^{:doc      "Generates a component with a union query that can route among the given screen, which MUST be
+in cljc files. The first screen listed will be the 'default' screen that the router will be initialized to show.
+
+- All screens *must* be in cljc files
+- All screens *must* implement InitialAppState
+- All screens *must* have a UI query
+"
+            :arglists '([sym router-id ident-fn & screens])} defrouter [& args]
+  (let [{:keys [sym router-id ident-fn children]} (conform! ::router-args args)
+        union-sym (symbol (str (name sym) "-Union"))]
+    `(do
+       ~(emit-union-element union-sym ident-fn children)
+       ~(emit-router router-id sym union-sym))))
+
 (comment
-  (macroexpand-1 '(defrouter TopRouter (fn [cls props] [(:page props) :report]) Screen1 Screen2))
+  (macroexpand-1 '(defrouter TopRouter :top (fn [cls props] [(:page props) :report]) Screen1 Screen2))
   (macroexpand-1 '(defmutation open "This is a test" [id param] (println "hello") (println "there")))
   (macroexpand-1 '(defmutation open "This is a test" [id param] (println hello) true)))
 

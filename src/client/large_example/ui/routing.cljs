@@ -9,6 +9,8 @@
             [untangled.client.core :as uc]))
 
 (def app-routes
+  "The bidi routing map for the application. The leaf keywords are the route names. Parameters
+  in the route are available for use in the routing algorithm as :param/param-name."
   (branch
     "/"
     (leaf "" :main)
@@ -17,21 +19,13 @@
     (leaf "reports" :reports-home)
     (branch "reports/" (param :report-id) (leaf "" :report))))
 
-(def suggested-app-state
-  {:main          {:top {#_"App state for top screen"}}
-   :login         {:top {#_"App state for login screen"}}
-   :new-user      {:top {#_"App state for sign up screen"}}
-   :reports       {:top {#_"App state for report routing, which can be empty"}}
-   :summary       {:report {#_"App state for report summary screen"}}
-   :detail        {:some-report-id {#_"App state for report detail screen"}}
-
-   ; graph linkage of routers
-   :top-screen    [:main :top]
-   :report-screen [:summary :report]
-
-   })
-
 (def routing-tree
+  "A map of routes. The top key is the name of the route (returned from bidi). The value
+  is a map. In this map:
+
+  - The keys are the IDs of the routers that must be updated to show the route, and whose
+  - The values are the target screen ident. A value in this ident using the `param` namespace will be
+  replaced with the incoming route parameter."
   {:main         {:top-screen [:main :top]}
    :login        {:top-screen [:login :top]}
    :new-user     {:top-screen [:new-user :top]}
@@ -51,6 +45,7 @@
                             (get route-params (keyword (name v)) v)
                             v)]
                 (assoc m k value))) state-map path-map)))
+
 (om/defui ReportsRouter
   static uc/InitialAppState
   (initial-state [clz params] (uc/initial-state SummaryReport {}))
