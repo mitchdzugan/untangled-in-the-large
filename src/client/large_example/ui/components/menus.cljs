@@ -9,7 +9,7 @@
             [om.dom :as dom]
             [untangled.client.core :as uc]))
 
-(declare ui-menu-item)
+(declare ui-menu-item close-all-menus open-menu)
 
 (defui MenuItem
   static uc/InitialAppState
