@@ -2,6 +2,7 @@
   (:require [om.next :as om]
             [bidi.verbose :refer [branch leaf param]]
             [untangled.client.mutations :as m]
+            [large-example.ui.screens.reports :refer [DetailReport SummaryReport ui-summary-report ui-detail-report]]
             [om.dom :as dom]
             [pushy.core :as pushy]
             [bidi.bidi :as bidi]
@@ -50,33 +51,6 @@
                             (get route-params (keyword (name v)) v)
                             v)]
                 (assoc m k value))) state-map path-map)))
-
-(om/defui SummaryReport
-  static uc/InitialAppState
-  (initial-state [clz params] {:page :summary :label "SUMMARY"})
-  static om/IQuery
-  (query [this] [:page :label])
-  Object
-  (render [this]
-    (let [{:keys [label]} (om/props this)]
-      (dom/div nil
-        label))))
-
-(def ui-summary-report (om/factory SummaryReport))
-
-(om/defui DetailReport
-  static uc/InitialAppState
-  (initial-state [clz params] {:page :detail :label "DETAIL"})
-  static om/IQuery
-  (query [this] [:page :label])
-  Object
-  (render [this]
-    (let [{:keys [label]} (om/props this)]
-      (dom/div nil
-        label))))
-
-(def ui-detail-report (om/factory DetailReport))
-
 (om/defui ReportsRouter
   static uc/InitialAppState
   (initial-state [clz params] (uc/initial-state SummaryReport {}))
@@ -147,7 +121,7 @@
 
 (def ui-new-user (om/factory NewUser))
 
-(om/defui TopRouter
+(om/defui TopRouter-Union
   static uc/InitialAppState
   (initial-state [clz params] (uc/initial-state Main {}))
   static om/Ident
@@ -168,7 +142,22 @@
           :new-user (ui-new-user props)
           :reports (ui-reports props))))))
 
-(def ui-top-router (om/factory TopRouter))
+(def ui-top-router (om/factory TopRouter-Union))
+
+(om/defui TopRouter
+  static uc/InitialAppState
+  (initial-state [clz params] {:id 1 :current-route (uc/initial-state TopRouter-Union {})})
+  static  om/Ident
+  (ident [this props] [:routers/by-id (:id props)])
+  static om/IQuery
+  (query [this] [{:current-route (om/get-query TopRouter-Union)}])
+  Object
+  (render [this]
+    (dom/div nil
+      "TOP ROUTER"
+      (ui-top-router (:current-route (om/props this))))))
+
+(def ui-top (om/factory TopRouter))
 
 (om/defui Root
   static uc/InitialAppState
@@ -180,7 +169,8 @@
   (render [this]
     (dom/div nil
       "ROOT"
-      (ui-top-router (:top-screen (om/props this))))))
+      (ui-top (:top-screen (om/props this))))))
+
 
 (defn update-route
   "Change the application's UI route to the given route."
