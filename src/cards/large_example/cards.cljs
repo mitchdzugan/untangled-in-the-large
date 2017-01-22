@@ -1,2 +1,5 @@
 (ns large-example.cards
-  (:require [large-example.intro]))
+  (:require
+    large-example.html-conversion
+    large-example.menus
+    large-example.intro))

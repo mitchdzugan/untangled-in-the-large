@@ -8,6 +8,7 @@
                  [kibu/pushy "0.3.6"]
                  [commons-io "2.5"]
 
+                 [hickory "0.7.0"]
                  [navis/untangled-client "0.6.1-SNAPSHOT"]
                  [untangled/om-css "1.0.0"]
                  [org.omcljs/om "1.0.0-alpha47"]
