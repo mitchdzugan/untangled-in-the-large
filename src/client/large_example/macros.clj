@@ -56,30 +56,29 @@ The following will be available in the body:
   Object
   (render [this] (dom/div nil "TODO")))
 
-
-
-(defn- emit-union-element [sym ident-fn children]
-  (let [id (eval ident-fn)
-        comp->kw (fn [comp] (first (id nil (untangled.client.core/get-initial-state (var-get (ns-resolve *ns* comp)) {}))))
-        query (reduce (fn [q cls] (assoc q (comp->kw cls) `(om.next/get-query ~cls))) {} children)
-        first-screen (first children)
-        screen-render (fn [cls] `((om.next/factory ~cls {:keyfn (fn [props#] ~(name cls))}) (om.next/props ~'this)))
-        render-stmt (reduce (fn [cases cls]
-                              (-> cases
-                                  (conj (comp->kw cls) (screen-render cls)))) [] children)]
-    `(om.next/defui ~sym
-       ~'static untangled.client.core/InitialAppState
-       (~'initial-state [~'clz ~'params] (untangled.client.core/get-initial-state ~first-screen ~'params))
-       ~'static om.next/Ident
-       (~'ident [~'this ~'props] (~ident-fn ~sym ~'props))
-       ~'static om.next/IQuery
-       (~'query [~'this] ~query)
-       ~'Object
-       (~'render [~'this]
-         (let [page# (first (om.next/get-ident ~'this))]
-           (case page#
-             ~@render-stmt
-             (om.dom/div nil (str "Cannot route: Unknown Screen " page#))))))))
+(defn- emit-union-element [sym ident-fn kws-and-screens]
+  (try
+    (let [query (reduce (fn [q {:keys [kw sym]}] (assoc q kw `(om.next/get-query ~sym))) {} kws-and-screens)
+          first-screen (-> kws-and-screens first :sym)
+          screen-render (fn [cls] `((om.next/factory ~cls {:keyfn (fn [props#] ~(name cls))}) (om.next/props ~'this)))
+          render-stmt (reduce (fn [cases {:keys [kw sym]}]
+                                (-> cases
+                                    (conj kw (screen-render sym)))) [] kws-and-screens)]
+      `(om.next/defui ~sym
+         ~'static untangled.client.core/InitialAppState
+         (~'initial-state [~'clz ~'params] (untangled.client.core/get-initial-state ~first-screen ~'params))
+         ~'static om.next/Ident
+         ~ident-fn
+         ~'static om.next/IQuery
+         (~'query [~'this] ~query)
+         ~'Object
+         (~'render [~'this]
+           (let [page# (first (om.next/get-ident ~'this))]
+             (case page#
+               ~@render-stmt
+               (om.dom/div nil (str "Cannot route: Unknown Screen " page#)))))))
+    (catch Exception e (.println System/err (str "Problem with macro " (.printStackTrace e System/out)))
+                       `(def ~sym (js/console.log "BROKEN ROUTER!")))))
 
 (defn- emit-router [router-id sym union-sym]
   `(om/defui ~sym
@@ -97,24 +96,49 @@ The following will be available in the body:
                        :sym symbol?
                        :router-id keyword?
                        :ident-fn (constantly true)
-                       :children (s/+ symbol?)))
+                       :kws-and-screens (s/+ (s/cat :kw keyword? :sym symbol?))))
 
 (defmacro ^{:doc      "Generates a component with a union query that can route among the given screen, which MUST be
 in cljc files. The first screen listed will be the 'default' screen that the router will be initialized to show.
 
-- All screens *must* be in cljc files
 - All screens *must* implement InitialAppState
 - All screens *must* have a UI query
 "
-            :arglists '([sym router-id ident-fn & screens])} defrouter [& args]
-  (let [{:keys [sym router-id ident-fn children]} (conform! ::router-args args)
+            :arglists '([sym router-id ident-fn & kws-and-screens])} defrouter [& args]
+  (let [{:keys [sym router-id ident-fn kws-and-screens]} (conform! ::router-args args)
         union-sym (symbol (str (name sym) "-Union"))]
     `(do
-       ~(emit-union-element union-sym ident-fn children)
+       ~(emit-union-element union-sym ident-fn kws-and-screens)
        ~(emit-router router-id sym union-sym))))
 
+
+(defn- emit-root [sym child]
+  `(om/defui ~sym
+     ~'static untangled.client.core/InitialAppState
+     (~'initial-state [~'clz ~'params] {:screen (uc/get-initial-state ~child {})})
+     ~'static om.next/IQuery
+     (~'query [~'this] [{:screen (om/get-query ~child)}])
+     ~'Object
+     (~'render [~'this]
+       ((om.next/factory ~child) (:screen (om/props ~'this))))))
+
+(s/def ::root-args (s/cat
+                     :sym symbol?
+                     :child symbol?))
+
+(defmacro ^{:doc      "Generate a defui for a root component that renders just the given child element. Useful
+for developing screens in devcards. Sample usage:
+
+(defroot CardRoot Screen1)
+(defcard my-card Screen1 {} {:inspect-data true})
+"
+            :arglists '([sym child])} defroot [& args]
+  (let [{:keys [sym child]} (conform! ::root-args args)]
+    (emit-root sym child)))
+
 (comment
-  (macroexpand-1 '(defrouter TopRouter :top (fn [cls props] [(:page props) :report]) Screen1 Screen2))
+  (macroexpand-1 '(defroot Root Child))
+  (macroexpand-1 '(defrouter TopRouter :top (ident [cls props] [(:page props) :report]) :screen1 Screen1 :screen2 Screen2))
   (macroexpand-1 '(defmutation open "This is a test" [id param] (println "hello") (println "there")))
   (macroexpand-1 '(defmutation open "This is a test" [id param] (println hello) true)))
 

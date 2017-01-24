@@ -173,7 +173,6 @@
 
 (defmethod m/mutate 'large-example.ui.routing/update-route [{:keys [state]} k p]
   {:action (fn []
-             (js/console.log :update-route p)
              (swap! state update-routing-links p))})
 
 (defn- set-route! [reconciler match]

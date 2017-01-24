@@ -6,7 +6,7 @@
                     untangled.client.core
                     [large-example.ui.screens.reports :as r]))
 
-(m/defrouter ReportsRouter :reports (fn [this props] [(:page props) :report]) r/SummaryReport r/DetailReport)
+#_(m/defrouter ReportsRouter :reports (ident [this props] [(:page props) :report]) r/SummaryReport r/DetailReport)
 
 #_(def ui-reports-router (om/factory ReportsRouter))
 

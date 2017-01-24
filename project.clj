@@ -13,6 +13,7 @@
                  [untangled/om-css "1.0.0"]
                  [org.omcljs/om "1.0.0-alpha47"]
 
+                 [cljsjs/victory "0.13.7-2"]
                  [navis/untangled-spec "0.3.10-SNAPSHOT" :scope "test" :exclusions [io.aviso/pretty]]
                  [lein-doo "0.1.7" :scope "test"]
                  [org.clojure/core.async "0.2.395"]
@@ -52,9 +53,9 @@
                         :source-paths ["src/client" "dev/client"]
                         :compiler     {:asset-path           "js/dev"
                                        :external-config
-                                       {:devtools/config
-                                        ;;github.com/binaryage/cljs-devtools/blob/master/docs/configuration.md
-                                        {:print-config-overrides true}}
+                                                             {:devtools/config
+                                                              ;;github.com/binaryage/cljs-devtools/blob/master/docs/configuration.md
+                                                              {:print-config-overrides true}}
                                        :main                 cljs.user
                                        :optimizations        :none
                                        :output-dir           "resources/public/js/dev"

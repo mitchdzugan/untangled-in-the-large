@@ -34,8 +34,7 @@
   (render [this]
     (dom/div nil "SUB SCREEN 2")))
 
-(defrouter SubRouter :subscreens (fn [this props]
-                                   [(:page props) :subscreen]) SubScreen1 SubScreen2)
+(defrouter SubRouter :subscreens (ident [this props] [(:page props) :subscreen]) :screen-1 SubScreen1 :screen-2 SubScreen2)
 
 (def ui-subrouter (om/factory SubRouter))
 
@@ -65,8 +64,8 @@
   (render [this]
     (dom/div nil "SCREEN 2")))
 
-(defrouter MyRouter :mine! (fn [this props]
-                             [(:page props) :report]) Screen1 Screen2)
+(defrouter MyRouter :mine! (ident [this props]
+                             [(:page props) :report]) :screen-1 Screen1 :screen-2 Screen2)
 
 (def ui-route (om/factory MyRouter))
 
