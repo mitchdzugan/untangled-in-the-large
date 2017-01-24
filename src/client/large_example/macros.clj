@@ -18,22 +18,38 @@
                       (s/explain-data spec x))))
     rt))
 
-(defmacro ^{:doc      "Define an Untangled mutation.
+(defmacro defplaceholder
+  "Generate a screen placeholder (with no ident) that is meant to be the target of a router. The initial-state should
+  include whatever is necessary for the router's ident function to perform properly. The component's query will include
+  all of the keys of the supplied initial state, which will then be available in your render body.
+  render-body should look like  `(render [this] ...)`."
+  [sym initial-state render-body]
+  (let [query (vec (keys initial-state))]
+    `(om/defui ~sym
+       ~'static untangled.client.core/InitialAppState
+       (~'initial-state [~'clz ~'params] ~initial-state)
+       ~'static om.next/IQuery
+       (~'query [~'this] ~query)
+       ~'Object
+       ~render-body)))
 
-The given symbol will be prefixed with the namespace of the current namespace.
+(defmacro ^{:doc      "Define an Untangled UI-only mutation.
 
-The arglist should be the *parameter* arglist of the mutation, NOT the complete argument list
-for the equivalent defmethod. For example:
+                       The given symbol will be prefixed with the namespace of the current namespace.
 
-   (defmutation boo [id] ...) => (defmethod m/mutate *ns*/boo [{:keys [state ref]} _ {:keys [id]}] ...)
+                       The arglist should be the *parameter* arglist of the mutation, NOT the complete argument list
+                       for the equivalent defmethod. For example:
 
-The following will be available in the body:
-- state : The application state atom
-- ref : The ident of the invoking component, if available
-- ast : The AST of the mutation
-- env : The complete Om Parser env
-"
-            :arglists '([sym docstring? arglist body])} defmutation [& args]
+                          (defmutation boo [id] ...) => (defmethod m/mutate *ns*/boo [{:keys [state ref]} _ {:keys [id]}] ...)
+
+                       The following will be available in the body:
+                       - state : The application state atom
+                       - ref : The ident of the invoking component, if available
+                       - ast : The AST of the mutation
+                       - env : The complete Om Parser env"
+            :arglists '([sym docstring? arglist body])}
+defmutation
+  [& args]
   (let [{:keys [sym doc arglist body]} (conform! ::mutation-args args)
         fqsym (symbol (name (ns-name *ns*)) (name sym))
         env '{:keys [state ref ast] :as env}]
@@ -85,7 +101,7 @@ The following will be available in the body:
      ~'static untangled.client.core/InitialAppState
      (~'initial-state [~'clz ~'params] {:id ~router-id :current-route (uc/get-initial-state ~union-sym {})})
      ~'static om.next/Ident
-     (~'ident [~'this ~'props] [:routers/by-id (:id ~'props)])
+     (~'ident [~'this ~'props] [:routers/by-id ~router-id])
      ~'static om.next/IQuery
      (~'query [~'this] [{:current-route (om/get-query ~union-sym)}])
      ~'Object
@@ -104,7 +120,9 @@ in cljc files. The first screen listed will be the 'default' screen that the rou
 - All screens *must* implement InitialAppState
 - All screens *must* have a UI query
 "
-            :arglists '([sym router-id ident-fn & kws-and-screens])} defrouter [& args]
+            :arglists '([sym router-id ident-fn & kws-and-screens])}
+  defrouter
+  [& args]
   (let [{:keys [sym router-id ident-fn kws-and-screens]} (conform! ::router-args args)
         union-sym (symbol (str (name sym) "-Union"))]
     `(do
@@ -117,10 +135,11 @@ in cljc files. The first screen listed will be the 'default' screen that the rou
      ~'static untangled.client.core/InitialAppState
      (~'initial-state [~'clz ~'params] {:screen (uc/get-initial-state ~child {})})
      ~'static om.next/IQuery
-     (~'query [~'this] [{:screen (om/get-query ~child)}])
+     (~'query [~'this] [:ui/react-key {:screen (om/get-query ~child)}])
      ~'Object
      (~'render [~'this]
-       ((om.next/factory ~child) (:screen (om/props ~'this))))))
+       (let [{:keys [~'ui/react-key]} (om/props ~'this)]
+         ((om.next/factory ~child) (:screen (om/props ~'this)))))))
 
 (s/def ::root-args (s/cat
                      :sym symbol?
@@ -132,7 +151,9 @@ for developing screens in devcards. Sample usage:
 (defroot CardRoot Screen1)
 (defcard my-card Screen1 {} {:inspect-data true})
 "
-            :arglists '([sym child])} defroot [& args]
+            :arglists '([sym child])}
+  defroot
+  [& args]
   (let [{:keys [sym child]} (conform! ::root-args args)]
     (emit-root sym child)))
 

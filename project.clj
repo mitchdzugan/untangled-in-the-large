@@ -58,6 +58,7 @@
                                                               {:print-config-overrides true}}
                                        :main                 cljs.user
                                        :optimizations        :none
+                                       :parallel-build       true
                                        :output-dir           "resources/public/js/dev"
                                        :output-to            "resources/public/js/large-example.js"
                                        :preloads             [devtools.preload]

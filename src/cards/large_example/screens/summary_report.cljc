@@ -3,6 +3,7 @@
              [large-example.macros :refer [defmutation defroot]]))
   (:require
     #?(:clj [large-example.macros :refer [defmutation defroot]])
+    #?(:cljs [large-example.ui.routing :as routing])
             [devcards.core :as dc :refer-macros [defcard]]
             [om.next :as om :refer [defui]]
             [untangled.client.cards :refer-macros [untangled-app]]
@@ -13,10 +14,16 @@
             [om.dom :as dom]
             [untangled.client.core :as uc]))
 
+(defonce summary-reconciler (atom nil))
+
 (defroot Root rpt/SummaryReport)
+
 
 #?(:cljs
    (defcard summary-report
-     (untangled-app Root)
+     (untangled-app routing/Root
+       :started-callback (fn [{:keys [reconciler]}]
+                           (reset! @routing/use-html5-routing false)
+                           (reset! summary-reconciler reconciler)))
      {}
      {:inspect-data true}))

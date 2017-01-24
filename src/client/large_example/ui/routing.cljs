@@ -1,83 +1,16 @@
 (ns large-example.ui.routing
+  (:require-macros [large-example.macros :refer [defrouter defplaceholder defroot]])
   (:require [om.next :as om]
             [bidi.verbose :refer [branch leaf param]]
             [untangled.client.mutations :as m]
-            [large-example.ui.screens.reports :refer [DetailReport SummaryReport ui-summary-report ui-detail-report]]
             [om.dom :as dom]
             [pushy.core :as pushy]
             [bidi.bidi :as bidi]
             [untangled.client.core :as uc]))
 
-(def app-routes
-  "The bidi routing map for the application. The leaf keywords are the route names. Parameters
-  in the route are available for use in the routing algorithm as :param/param-name."
-  (branch
-    "/"
-    (leaf "" :main)
-    (leaf "login" :login)
-    (leaf "signup" :new-user)
-    (leaf "reports" :reports-home)
-    (branch "reports/" (param :report-id) (leaf "" :report))))
+(declare nav-to!)
 
-(def routing-tree
-  "A map of routes. The top key is the name of the route (returned from bidi). The value
-  is a map. In this map:
-
-  - The keys are the IDs of the routers that must be updated to show the route, and whose
-  - The values are the target screen ident. A value in this ident using the `param` namespace will be
-  replaced with the incoming route parameter."
-  {:main         {:top-screen [:main :top]}
-   :login        {:top-screen [:login :top]}
-   :new-user     {:top-screen [:new-user :top]}
-   :reports-home {:top-screen    [:reports :top]
-                  :report-screen [:summary :report]}
-   :report       {:top-screen    [:reports :top]
-                  :report-screen [:detail :param/report-id]}})
-
-(defn update-routing-links
-  "Given the app state map, returns a new map that has the routing graph links updated for the given route/params
-  as a bidi match."
-  [state-map {:keys [route]}]
-  (let [{:keys [route-params handler]} route
-        path-map (get routing-tree handler {})]
-    (reduce (fn [m [k v]]
-              (let [value (if (and (keyword? v) (= "param" (namespace v)))
-                            (get route-params (keyword (name v)) v)
-                            v)]
-                (assoc m k value))) state-map path-map)))
-
-(om/defui ReportsRouter
-  static uc/InitialAppState
-  (initial-state [clz params] (uc/initial-state SummaryReport {}))
-  static om/Ident
-  (ident [this props] [(:page props) :report])
-  static om/IQuery
-  (query [this] {:summary (om/get-query SummaryReport)
-                 :detail  (om/get-query DetailReport)})
-  Object
-  (render [this]
-    (let [{:keys [page] :as props} (om/props this)]
-      (case page
-        :summary (ui-summary-report props)
-        :detail (ui-detail-report props)))))
-
-(def ui-reports-router (om/factory ReportsRouter))
-
-(om/defui Reports
-  static uc/InitialAppState
-  (initial-state [clz params] {:page :reports})
-  static om/IQuery
-  (query [this] [:page {[:report-screen '_] (om/get-query ReportsRouter)}])
-  Object
-  (render [this]
-    (let [{:keys [report-screen]} (om/props this)]
-      (dom/div nil
-        "REPORTS SUBSCREEN"
-        (ui-reports-router report-screen)))))
-
-(def ui-reports (om/factory Reports))
-
-(om/defui Main
+(om/defui ^:once Main
   static uc/InitialAppState
   (initial-state [clz params] {:page :main :label "MAIN"})
   static om/IQuery
@@ -86,11 +19,15 @@
   (render [this]
     (let [{:keys [label]} (om/props this)]
       (dom/div nil
+        (dom/a #js {:onClick #(nav-to! this :new-user)} "New User")
+        (dom/a #js {:onClick #(nav-to! this :login)} "Login")
+        (dom/a #js {:href "/status/a"} "Status A")
+        (dom/a #js {:href "/graph/a"} "Graph A")
         label))))
 
 (def ui-main (om/factory Main))
 
-(om/defui Login
+(om/defui ^:once Login
   static uc/InitialAppState
   (initial-state [clz params] {:page :login :label "LOGIN"})
   static om/IQuery
@@ -103,7 +40,7 @@
 
 (def ui-login (om/factory Login))
 
-(om/defui NewUser
+(om/defui ^:once NewUser
   static uc/InitialAppState
   (initial-state [clz params] {:page :new-user :label "New User"})
   static om/IQuery
@@ -116,78 +53,164 @@
 
 (def ui-new-user (om/factory NewUser))
 
-(om/defui TopRouter-Union
+(defplaceholder StatusReport {:id :a :page :status-report}
+  (render [this] (let [{:keys [id]} (om/props this)]
+                   (dom/div nil (str "Status " id)))))
+
+(defplaceholder GraphingReport {:id :a :page :graphing-report}
+  (render [this] (let [{:keys [id]} (om/props this)]
+                   (dom/div nil (str "Graph " id)))))
+
+(defrouter ReportRouter :report-router
+  (ident [this props]
+         [(:page props) (:id props)])
+  :status-report StatusReport
+  :graphing-report GraphingReport
+  )
+
+
+#_(om/defui ^:once TopRouter-Union
+    static uc/InitialAppState
+    (initial-state [clz params] (uc/get-initial-state Main {}))
+    static om/Ident
+    (ident [this props] [(:page props) :top])
+    static om/IQuery
+    (query [this] {:main     (om/get-query Main)
+                   :reports  (om/get-query ReportRouter)
+                   :login    (om/get-query Login)
+                   :new-user (om/get-query NewUser)})
+    Object
+    (render [this]
+      (let [{:keys [page] :as props} (om/props this)]
+        (dom/div nil
+          (case page
+            :main (ui-main props)
+            :login (ui-login props)
+            :new-user (ui-new-user props)
+            (dom/div nil (str "BAD PAGE" page)))))))
+
+#_(def ui-top-router (om/factory TopRouter-Union))
+
+#_(om/defui ^:once TopRouter
+    static uc/InitialAppState
+    (initial-state [clz params] {:current-route (uc/get-initial-state TopRouter-Union {})})
+    static om/Ident
+    (ident [this props] [:routers/by-id :top-screen])
+    static om/IQuery
+    (query [this] [{:current-route (om/get-query TopRouter-Union)}])
+    Object
+    (render [this]
+      (ui-top-router (:current-route (om/props this)))))
+
+#_(def ui-top (om/factory TopRouter))
+
+; BIG GOTCHA: Make sure you query for the prop (in this case :page) that the union needs in order to decide. It won't pull it itself!
+(om/defui ^:once ReportsMain
   static uc/InitialAppState
-  (initial-state [clz params] (uc/initial-state Main {}))
-  static om/Ident
+  (initial-state [clz params] {:page :report :report-router (uc/get-initial-state ReportRouter {})})
+  static om/IQuery
+  (query [this] [:page {:report-router (om/get-query ReportRouter)}])
+  Object
+  (render [this]
+    (dom/div nil
+      "REPORT MAIN SCREEN"
+      ((om/factory ReportRouter) (:report-router (om/props this))))))
+
+
+(defrouter TopRouter :top-screen
   (ident [this props] [(:page props) :top])
-  static om/IQuery
-  (query [this] {:main     (om/get-query Main)
-                 :login    (om/get-query Login)
-                 :new-user (om/get-query NewUser)
-                 :reports  (om/get-query Reports)})
-  Object
-  (render [this]
-    (let [{:keys [page] :as props} (om/props this)]
-      (dom/div nil
-        (js/console.log :page page)
-        (case page
-          :main (ui-main props)
-          :login (ui-login props)
-          :new-user (ui-new-user props)
-          :reports (ui-reports props))))))
+  :main Main
+  :login Login
+  :new-user NewUser
+  :report ReportsMain)
 
-(def ui-top-router (om/factory TopRouter-Union))
+#_(om/defui ^:once Root
+    static uc/InitialAppState
+    (initial-state [clz params] {:top-screen (uc/get-initial-state TopRouter {})})
+    static om/IQuery
+    (query [this] [:ui/react-key {:top-screen (om/get-query TopRouter)}])
+    Object
+    (render [this]
+      (let [{:keys [ui/react-key top-screen]} (om/props this)]
+        (dom/div #js {:key react-key}
+          (ui-top top-screen)))))
 
-(om/defui TopRouter
-  static uc/InitialAppState
-  (initial-state [clz params] {:id 1 :current-route (uc/initial-state TopRouter-Union {})})
-  static  om/Ident
-  (ident [this props] [:routers/by-id (:id props)])
-  static om/IQuery
-  (query [this] [{:current-route (om/get-query TopRouter-Union)}])
-  Object
-  (render [this]
-    (dom/div nil
-      "TOP ROUTER"
-      (ui-top-router (:current-route (om/props this))))))
+(defroot Root TopRouter)
 
-(def ui-top (om/factory TopRouter))
 
-(om/defui Root
-  static uc/InitialAppState
-  (initial-state [clz params] {:report-screen [:summary :report]
-                               :top-screen    (uc/initial-state TopRouter {})})
-  static om/IQuery
-  (query [this] [{:top-screen (om/get-query TopRouter)}])
-  Object
-  (render [this]
-    (dom/div nil
-      "ROOT"
-      (ui-top (:top-screen (om/props this))))))
+(def routing-tree
+  "A map of routes. The top key is the name of the route (returned from bidi). The value
+  is a map. In this map:
 
+  - The keys are the IDs of the routers that must be updated to show the route, and whose
+  - The values are the target screen ident. A value in this ident using the `param` namespace will be
+  replaced with the incoming route parameter."
+  {:main     {:top-screen [:main :top]}
+   :login    {:top-screen [:login :top]}
+   :new-user {:top-screen [:new-user :top]}
+   :graph    {:top-screen    [:report :top]
+              :report-router [:graphing-report :param/report-id]}
+   :status   {:top-screen    [:report :top]
+              :report-router [:status-report :param/report-id]}})
+
+(defn update-routing-links
+  "Given the app state map, returns a new map that has the routing graph links updated for the given route/params
+  as a bidi match."
+  [state-map {:keys [route]}]
+  (let [{:keys [route-params handler]} route
+        path-map (get routing-tree handler {})]
+    (reduce (fn [m [router-id ident-to-set]]
+              (let [value (mapv (fn [element]
+                                  (if (and (keyword? element) (= "param" (namespace element)))
+                                    (keyword (get route-params (keyword (name element)) element))
+                                    element))
+                                ident-to-set)]
+                (assoc-in m [:routers/by-id router-id :current-route] value))) state-map path-map)))
 
 (defn update-route
   "Change the application's UI route to the given route."
   [{:keys [route]}] (comment "placeholder for IDE assistance"))
 
 (defmethod m/mutate 'large-example.ui.routing/update-route [{:keys [state]} k p]
-  {:action (fn []
-             (swap! state update-routing-links p))})
+  {:action (fn [] (swap! state update-routing-links p))})
 
-(defn- set-route! [reconciler match]
-  (om/transact! reconciler `[(large-example.ui.routing/update-route ~{:route match})]))
+(defn set-route!
+  "Change the route using a bidi match. This method can be directly hooked to pushy via bidi at startup:
+
+  ```
+  (pushy/pushy (partial r/set-route! reconciler) (partial bidi/match-route r/app-routes))
+  ```
+
+  You probably will want to save the pushy return value for programatic routing via `pushy/set-token!`
+  "
+  [comp-or-reconciler match]
+  (om/transact! comp-or-reconciler `[(large-example.ui.routing/update-route ~{:route match})]))
 
 (def history (atom nil))
+
+(defonce use-html5-routing (atom true))
+
+(def app-routes
+  "The bidi routing map for the application. The leaf keywords are the route names. Parameters
+  in the route are available for use in the routing algorithm as :param/param-name."
+  (branch
+    "/"
+    (leaf "index-dev.html" :main)
+    (leaf "index.html" :main)
+    (leaf "" :main)
+    (leaf "login" :login)
+    (leaf "signup" :new-user)
+    (branch "status/" (param :report-id) (leaf "" :status))
+    (branch "graph/" (param :report-id) (leaf "" :graph))))
+
+
+(defn nav-to!
+  [component page & kvs]
+  (if (and @history @use-html5-routing)
+    (pushy/set-token! @history (bidi/path-for app-routes page))
+    (om/transact! component `[(large-example.ui.routing/update-route ~{:handler page :route-params (into {} kvs)})])))
 
 (defn nav-to [env page]
   (pushy/set-token! @history (bidi/path-for app-routes page))
   (swap! (:state env) assoc :current-page [page :page]))
 
-(defmethod m/mutate 'nav/new-user [env k p] {:action (fn [] (nav-to env :new-user))})
-(defmethod m/mutate 'nav/login [env k p] {:action (fn [] (nav-to env :login))})
-(defmethod m/mutate 'nav/main [env k p] {:action (fn [] (nav-to env :main))})
-
-(comment
-  (bidi/match-route app-routes "/reports/5")
-  (bidi/path-for app-routes :report :report-id 6))

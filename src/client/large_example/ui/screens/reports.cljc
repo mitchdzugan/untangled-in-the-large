@@ -18,8 +18,6 @@
                                              {:x 4 :y 4} {:x 5 :y 7}]})
   static om/IQuery
   (query [this] [:page :label :data-points])
-  static om/Ident
-  (ident [this props] [:summary :report])
   Object
   (render [this]
     (let [{:keys [label data-points width]} (om/props this)]
@@ -37,8 +35,6 @@
   (initial-state [clz params] {:page :detail :label "DETAIL"})
   static om/IQuery
   (query [this] [:page :label])
-  static om/Ident
-  (ident [this props] [:detail :report])
   Object
   (render [this]
     (let [{:keys [label]} (om/props this)]
