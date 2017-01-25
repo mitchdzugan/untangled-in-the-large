@@ -15,6 +15,7 @@
 
                  [cljsjs/victory "0.13.7-2"]
                  [navis/untangled-spec "0.3.10-SNAPSHOT" :scope "test" :exclusions [io.aviso/pretty]]
+                 [ring/ring-mock "0.3.0"]
                  [lein-doo "0.1.7" :scope "test"]
                  [org.clojure/core.async "0.2.395"]
                  [http-kit "2.2.0"]
@@ -43,7 +44,7 @@
   :cljsbuild {:builds [{:id           "production"
                         :source-paths ["src/client"]
                         :jar          true
-                        :compiler     {:asset-path    "js/prod"
+                        :compiler     {:asset-path    "/js/prod"
                                        :main          large-example.main
                                        :optimizations :simple
                                        :output-dir    "resources/public/js/prod"
@@ -51,7 +52,7 @@
                        {:id           "dev"
                         :figwheel     true
                         :source-paths ["src/client" "dev/client"]
-                        :compiler     {:asset-path           "js/dev"
+                        :compiler     {:asset-path           "/js/dev"
                                        :external-config
                                                              {:devtools/config
                                                               ;;github.com/binaryage/cljs-devtools/blob/master/docs/configuration.md
@@ -66,7 +67,7 @@
                        {:id           "test"
                         :source-paths ["specs/client" "src/client"]
                         :figwheel     true
-                        :compiler     {:asset-path    "js/specs"
+                        :compiler     {:asset-path    "/js/specs"
                                        :main          large-example.spec-main
                                        :optimizations :none
                                        :output-dir    "resources/public/js/specs"
@@ -74,7 +75,7 @@
                                        :preloads      [devtools.preload]}}
                        {:id           "automated-tests"
                         :source-paths ["specs/client" "src/client"]
-                        :compiler     {:asset-path    "js/ci"
+                        :compiler     {:asset-path    "/js/ci"
                                        :main          large-example.all-tests
                                        :optimizations :none
                                        :output-dir    "resources/private/js/ci"
@@ -82,7 +83,7 @@
                        {:id           "cards"
                         :figwheel     {:devcards true}
                         :source-paths ["src/client" "src/cards"]
-                        :compiler     {:asset-path           "js/cards"
+                        :compiler     {:asset-path           "/js/cards"
                                        :main                 large-example.cards
                                        :optimizations        :none
                                        :output-dir           "resources/public/js/cards"

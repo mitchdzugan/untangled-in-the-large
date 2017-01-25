@@ -2,11 +2,8 @@
   (:require
     [untangled.client.core :as uc]
     [om.next :as om]
-
     [large-example.ui.routing :as r]
     [large-example.core :as core]
-    [large-example.ui.root :as root]
-
     [cljs.pprint :refer [pprint]]
     [untangled.client.mutations :as m]))
 
