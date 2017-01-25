@@ -19,10 +19,6 @@
   (render [this]
     (let [{:keys [label]} (om/props this)]
       (dom/div nil
-        (dom/a #js {:onClick #(nav-to! this :new-user)} "New User")
-        (dom/a #js {:onClick #(nav-to! this :login)} "Login")
-        (dom/a #js {:href "/status/a"} "Status A")
-        (dom/a #js {:href "/graph/a"} "Graph A")
         label))))
 
 (def ui-main (om/factory Main))
@@ -53,30 +49,14 @@
 
 (def ui-new-user (om/factory NewUser))
 
-(defplaceholder StatusReport {:id :a :page :status-report}
-  (render [this] (let [{:keys [id]} (om/props this)]
-                   (dom/div nil (str "Status " id)))))
-
-(defplaceholder GraphingReport {:id :a :page :graphing-report}
-  (render [this] (let [{:keys [id]} (om/props this)]
-                   (dom/div nil (str "Graph " id)))))
-
-(defrouter ReportRouter :report-router
-  (ident [this props]
-         [(:page props) (:id props)])
-  :status-report StatusReport
-  :graphing-report GraphingReport
-  )
-
-
-#_(om/defui ^:once TopRouter-Union
+(comment
+  (om/defui ^:once TopRouter-Union
     static uc/InitialAppState
     (initial-state [clz params] (uc/get-initial-state Main {}))
     static om/Ident
     (ident [this props] [(:page props) :top])
     static om/IQuery
     (query [this] {:main     (om/get-query Main)
-                   :reports  (om/get-query ReportRouter)
                    :login    (om/get-query Login)
                    :new-user (om/get-query NewUser)})
     Object
@@ -89,9 +69,9 @@
             :new-user (ui-new-user props)
             (dom/div nil (str "BAD PAGE" page)))))))
 
-#_(def ui-top-router (om/factory TopRouter-Union))
+  (def ui-top-router (om/factory TopRouter-Union))
 
-#_(om/defui ^:once TopRouter
+  (om/defui ^:once TopRouter
     static uc/InitialAppState
     (initial-state [clz params] {:current-route (uc/get-initial-state TopRouter-Union {})})
     static om/Ident
@@ -102,7 +82,22 @@
     (render [this]
       (ui-top-router (:current-route (om/props this)))))
 
-#_(def ui-top (om/factory TopRouter))
+  (def ui-top (om/factory TopRouter)))
+
+(defplaceholder StatusReport {:id :a :page :status-report}
+  (render [this] (let [{:keys [id]} (om/props this)]
+                   (dom/div nil (str "Status " id)))))
+
+(defplaceholder GraphingReport {:id :a :page :graphing-report}
+  (render [this] (let [{:keys [id]} (om/props this)]
+                   (dom/div nil (str "Graph " id)))))
+
+(defrouter ReportRouter :report-router
+  (ident [this props]
+         [(:page props) (:id props)])
+  :status-report StatusReport
+  :graphing-report GraphingReport)
+
 
 ; BIG GOTCHA: Make sure you query for the prop (in this case :page) that the union needs in order to decide. It won't pull it itself!
 (om/defui ^:once ReportsMain
@@ -124,19 +119,26 @@
   :new-user NewUser
   :report ReportsMain)
 
-#_(om/defui ^:once Root
-    static uc/InitialAppState
-    (initial-state [clz params] {:top-screen (uc/get-initial-state TopRouter {})})
-    static om/IQuery
-    (query [this] [:ui/react-key {:top-screen (om/get-query TopRouter)}])
-    Object
-    (render [this]
-      (let [{:keys [ui/react-key top-screen]} (om/props this)]
-        (dom/div #js {:key react-key}
-          (ui-top top-screen)))))
+#_(defroot Root TopRouter)
 
-(defroot Root TopRouter)
+(def ui-top (om/factory TopRouter))
 
+(om/defui ^:once Root
+  static uc/InitialAppState
+  (initial-state [clz params] {:top-screen (uc/get-initial-state TopRouter {})})
+  static om/IQuery
+  (query [this] [:ui/react-key {:top-screen (om/get-query TopRouter)}])
+  Object
+  (render [this]
+    (let [{:keys [ui/react-key top-screen]} (om/props this)]
+      (dom/div #js {:key react-key}
+        #_(dom/a #js {:href "/signup"} "New User")
+        #_(dom/a #js {:href "/login"} "Login")
+        (dom/a #js {:onClick #(nav-to! this :new-user)} "New User")
+        (dom/a #js {:onClick #(nav-to! this :login)} "Login")
+        (dom/a #js {:href "/status/a"} "Status A")
+        #_(dom/a #js {:href "/graph/a"} "Graph A")
+        (ui-top top-screen)))))
 
 (def routing-tree
   "A map of routes. The top key is the name of the route (returned from bidi). The value
@@ -186,8 +188,10 @@
   [comp-or-reconciler match]
   (om/transact! comp-or-reconciler `[(large-example.ui.routing/update-route ~{:route match})]))
 
+;; To keep track of the global HTML5 pushy routing object
 (def history (atom nil))
 
+;; To indicate when we should turn on URI mapping. This is so you can use with devcards (by turning it off)
 (defonce use-html5-routing (atom true))
 
 (def app-routes
@@ -203,14 +207,23 @@
     (branch "status/" (param :report-id) (leaf "" :status))
     (branch "graph/" (param :report-id) (leaf "" :graph))))
 
-
 (defn nav-to!
   [component page & kvs]
   (if (and @history @use-html5-routing)
     (pushy/set-token! @history (bidi/path-for app-routes page))
     (om/transact! component `[(large-example.ui.routing/update-route ~{:handler page :route-params (into {} kvs)})])))
 
-(defn nav-to [env page]
-  (pushy/set-token! @history (bidi/path-for app-routes page))
-  (swap! (:state env) assoc :current-page [page :page]))
+
+
+
+
+
+
+
+
+
+(defn nav-to
+  "A mutation helper to update state based on a page selection. Cannot route to pages that need parameters (yet). Does not update URI."
+  [{:keys [state]} page]
+  (update-routing-links state page))
 

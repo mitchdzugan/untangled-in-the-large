@@ -25,7 +25,7 @@
   render-body should look like  `(render [this] ...)`."
   [sym initial-state render-body]
   (let [query (vec (keys initial-state))]
-    `(om/defui ~sym
+    `(om/defui ~(vary-meta sym assoc :once true)
        ~'static untangled.client.core/InitialAppState
        (~'initial-state [~'clz ~'params] ~initial-state)
        ~'static om.next/IQuery
@@ -56,22 +56,6 @@ defmutation
     `(defmethod untangled.client.mutations/mutate '~fqsym [~env ~'_ {:keys ~arglist}]
        {:action (fn [] ~@body)})))
 
-(om/defui Screen1
-  static untangled.client.core/InitialAppState
-  (initial-state [clz params] {:page :screen1})
-  static om.next/IQuery
-  (query [this] [:db/id :screen1/label :page])
-  Object
-  (render [this] (dom/div nil "TODO")))
-
-(om/defui Screen2
-  static untangled.client.core/InitialAppState
-  (initial-state [clz params] {:page :screen2})
-  static om.next/IQuery
-  (query [this] [:db/id :screen1/label :page])
-  Object
-  (render [this] (dom/div nil "TODO")))
-
 (defn- emit-union-element [sym ident-fn kws-and-screens]
   (try
     (let [query (reduce (fn [q {:keys [kw sym]}] (assoc q kw `(om.next/get-query ~sym))) {} kws-and-screens)
@@ -80,7 +64,7 @@ defmutation
           render-stmt (reduce (fn [cases {:keys [kw sym]}]
                                 (-> cases
                                     (conj kw (screen-render sym)))) [] kws-and-screens)]
-      `(om.next/defui ~sym
+      `(om.next/defui ~(vary-meta sym assoc :once true)
          ~'static untangled.client.core/InitialAppState
          (~'initial-state [~'clz ~'params] (untangled.client.core/get-initial-state ~first-screen ~'params))
          ~'static om.next/Ident
@@ -97,7 +81,7 @@ defmutation
                        `(def ~sym (js/console.log "BROKEN ROUTER!")))))
 
 (defn- emit-router [router-id sym union-sym]
-  `(om/defui ~sym
+   `(om.next/defui ~(vary-meta sym assoc :once true)
      ~'static untangled.client.core/InitialAppState
      (~'initial-state [~'clz ~'params] {:id ~router-id :current-route (uc/get-initial-state ~union-sym {})})
      ~'static om.next/Ident
@@ -131,7 +115,7 @@ in cljc files. The first screen listed will be the 'default' screen that the rou
 
 
 (defn- emit-root [sym child]
-  `(om/defui ~sym
+   `(om.next/defui ~(vary-meta sym assoc :once true)
      ~'static untangled.client.core/InitialAppState
      (~'initial-state [~'clz ~'params] {:screen (uc/get-initial-state ~child {})})
      ~'static om.next/IQuery

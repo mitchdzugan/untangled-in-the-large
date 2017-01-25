@@ -7,11 +7,19 @@
     [large-example.core :as core]
     [large-example.ui.root :as root]
 
-    [cljs.pprint :refer [pprint]]))
+    [cljs.pprint :refer [pprint]]
+    [untangled.client.mutations :as m]))
 
 (enable-console-print!)
 
 (reset! core/app (uc/mount @core/app r/Root "app"))
+
+(defmethod m/mutate 'nav/route-to [{:keys [state]} _ {:keys [router page]}]
+  (swap! state assoc-in [:routers/by-id router :current-route] page))
+
+(comment
+  (let [{:keys [reconciler]} @core/app]
+    (om/transact! reconciler '[(nav/route-to {:router :top-screen :page [:main :top]})])))
 
 (defn app-state [] @(:reconciler @core/app))
 

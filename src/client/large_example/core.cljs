@@ -19,9 +19,5 @@
                  :started-callback (fn [{:keys [reconciler]}]
                                      (reset! r/history (pushy/pushy (partial r/set-route! reconciler) (partial bidi/match-route r/app-routes)))
                                      (pushy/start! @r/history)
-                                     ;(pushy/set-token! @r/history "/login")
-                                     ;(pushy/set-token! @r/history "/")
-                                     ;(pushy/set-token! @r/history "/reports")
-                                     ;(f/load-data reconciler [:logged-in? :current-user] :post-mutation 'login/login-complete)
                                      ;;TODO: initial load of data
                                      ))))
