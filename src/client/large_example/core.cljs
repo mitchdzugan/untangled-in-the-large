@@ -17,7 +17,8 @@
          (atom (uc/new-untangled-client
                  :mutation-merge merge-mutations
                  :started-callback (fn [{:keys [reconciler]}]
-                                     (reset! r/history (pushy/pushy (partial r/set-route! reconciler) (partial bidi/match-route r/app-routes)))
+                                     ; NOTE: To get a root re-render on routing, you should use the UI root as the component on the transact
+                                     (let [r (om/app-root reconciler)]
+                                       (reset! r/history (pushy/pushy (partial r/set-route! r) (partial bidi/match-route r/app-routes))))
                                      (pushy/start! @r/history)
-                                     ;;TODO: initial load of data
                                      ))))

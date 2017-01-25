@@ -1,8 +1,9 @@
 # Untangled in the Large
 
-These are the files used in the YouTube video about Untangled in the Large.
+These are the files used in the [YouTube videos](https://youtu.be/j-_itpXEo6w) about Untangled in the Large.
 
-Work in progres...there is a lot of extra stuff here for now
+This project was started from an [Untangled Template](https://github.com/untangled-web/untangled-template). It may be useful 
+for you to review the details included in that README.
 
 The files of interest are:
 ```
@@ -20,7 +21,34 @@ The files of interest are:
 │   │           ├── routing.cljs
 ```
 
-# Server Setup for HTML5 Routing
+# Running
+
+## Server
+
+- Set the JVM_OPTS option `-Ddev` to work via figwheel and `index-dev.html`.
+This ensures the proper page is served when you hit HTML5 routes as initial loads.
+In IntelliJ, you can do this in the Run Configuration as a JVM parameter. At
+the command line, just set the env variable JVM_OPTS to `-Ddev`.
+
+Run a REPL, then call the function `(go)`. Refreshing the server
+code and restarting it is `(reset)`. See `user.clj` or untangled-template for more detailed
+details.
+
+## Client
+
+Start a normal REPL (e.g. via IntelliJ clojure.main) with the program argument
+`script/figwheel.clj`.
+
+You will not want to use figwheel alone, since it will not know to server
+HTML5 routes. You'll want to use the server (which defaults to port 3000).
+
+# HTML5 Routing
+
+## Client Notes 
+
+- The `pushy` startup code is in `core.cljs`. See the comments there.
+
+## Server Setup
 
 - See `system.clj` for how we're hacking the server to server index.html for any
 URL. This is not needed if the user starts from `index.html`, but if they

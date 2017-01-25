@@ -1,16 +1,15 @@
 (ns large-example.router
-  #?(:cljs (:require-macros
-             [large-example.macros :refer [defmutation defrouter]]))
+  (:require-macros
+    [large-example.macros :refer [defmutation defrouter]])
   (:require
-    #?(:clj [large-example.macros :refer [defmutation defrouter]])
-            [devcards.core :as dc :refer-macros [defcard]]
-            [om.next :as om :refer [defui]]
-            [untangled.client.cards :refer-macros [untangled-app]]
-            [untangled.client.mutations :as m]
-            [untangled.client.logging :as log]
-            [untangled.i18n :refer-macros [tr trc]]
-            [om.dom :as dom]
-            [untangled.client.core :as uc]))
+    [devcards.core :as dc :refer-macros [defcard]]
+    [om.next :as om :refer [defui]]
+    [untangled.client.cards :refer-macros [untangled-app]]
+    [untangled.client.mutations :as m]
+    [untangled.client.logging :as log]
+    [untangled.i18n :refer-macros [tr trc]]
+    [om.dom :as dom]
+    [untangled.client.core :as uc]))
 
 (defui SubScreen1
   static uc/InitialAppState
@@ -65,7 +64,7 @@
     (dom/div nil "SCREEN 2")))
 
 (defrouter MyRouter :mine! (ident [this props]
-                             [(:page props) :report]) :screen-1 Screen1 :screen-2 Screen2)
+                                  [(:page props) :report]) :screen-1 Screen1 :screen-2 Screen2)
 
 (def ui-route (om/factory MyRouter))
 

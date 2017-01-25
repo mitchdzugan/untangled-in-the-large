@@ -73,14 +73,14 @@
 
   (om/defui ^:once TopRouter
     static uc/InitialAppState
-    (initial-state [clz params] {:current-route (uc/get-initial-state TopRouter-Union {})})
+    (initial-state [clz params] {:router/current-route (uc/get-initial-state TopRouter-Union {})})
     static om/Ident
     (ident [this props] [:routers/by-id :top-screen])
     static om/IQuery
-    (query [this] [{:current-route (om/get-query TopRouter-Union)}])
+    (query [this] [{:router/current-route (om/get-query TopRouter-Union)}])
     Object
     (render [this]
-      (ui-top-router (:current-route (om/props this)))))
+      (ui-top-router (:router/current-route (om/props this)))))
 
   (def ui-top (om/factory TopRouter)))
 
@@ -119,8 +119,6 @@
   :new-user NewUser
   :report ReportsMain)
 
-#_(defroot Root TopRouter)
-
 (def ui-top (om/factory TopRouter))
 
 (om/defui ^:once Root
@@ -130,6 +128,7 @@
   (query [this] [:ui/react-key {:top-screen (om/get-query TopRouter)}])
   Object
   (render [this]
+    (js/console.log :ROOT-RENDER)
     (let [{:keys [ui/react-key top-screen]} (om/props this)]
       (dom/div #js {:key react-key}
         #_(dom/a #js {:href "/signup"} "New User")
@@ -167,7 +166,7 @@
                                     (keyword (get route-params (keyword (name element)) element))
                                     element))
                                 ident-to-set)]
-                (assoc-in m [:routers/by-id router-id :current-route] value))) state-map path-map)))
+                (assoc-in m [:routers/by-id router-id :router/current-route] value))) state-map path-map)))
 
 (defn update-route
   "Change the application's UI route to the given route."
@@ -185,8 +184,8 @@
 
   You probably will want to save the pushy return value for programatic routing via `pushy/set-token!`
   "
-  [comp-or-reconciler match]
-  (om/transact! comp-or-reconciler `[(large-example.ui.routing/update-route ~{:route match})]))
+  [comp-or-reconciler bidi-match]
+  (om/transact! comp-or-reconciler `[(large-example.ui.routing/update-route ~{:route bidi-match})]))
 
 ;; To keep track of the global HTML5 pushy routing object
 (def history (atom nil))

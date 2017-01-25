@@ -12,11 +12,26 @@
     [ring.middleware.cookies :as cookies]
     [ring.middleware.resource :as resource]
     [ring.mock.request :as req]
-    [ring.util.response :as response]))
+    [ring.util.request :as rreq]
+    [ring.util.response :as response]
+    [clojure.string :as str]))
 
 (defn logging-mutate [env k params]
   (timbre/info "Entering mutation:" k)
   (mut/apimutate env k params))
+
+(defn wrap-html5-routes-as-index [handler]
+  (fn [req]
+    (let [headers (:headers req)
+          url (rreq/request-url req)
+          dev-mode? (boolean (System/getProperty "dev"))
+          ; only serve index in place of things that do not have a suffix, or end in .html
+          is-leaf? (boolean (re-matches #".*/([^/.]*|[^/.]*\.html)$" url))]
+      (if is-leaf?
+        (-> (resource/resource-request (-> (req/request :get (if dev-mode? "/index-dev.html" "/index.html"))
+                                           (assoc :headers headers)) "public")
+            (response/content-type "text/html"))
+        (handler req)))))
 
 ; TEMPLATE: :examples
 (defrecord AdditionalPipeline [handler]
@@ -24,16 +39,9 @@
   (start [this]
     ; This is the basic pattern for composing into the existing pre-hook handler (which starts out as identity)
     ; If you're sure this is the only component hooking in, you could simply set it instead.
-    (let [vanilla-pipeline (h/get-fallback-hook handler)
-          html5-routing-handler (fn [handler]
-                                  (fn [req]
-                                   (.println System/out (str "REQUEST" req))
-                                   (let [headers (:headers req)]
-                                     (-> (resource/resource-request (-> (req/request :get "/index-dev.html")
-                                                                     (assoc :headers headers)) "public")
-                                         (response/content-type "text/html")))))]
+    (let [vanilla-pipeline (h/get-fallback-hook handler)]
       (h/set-fallback-hook! handler (comp vanilla-pipeline
-                                          (partial html5-routing-handler))))
+                                          (partial wrap-html5-routes-as-index))))
     this)
   (stop [this] this))
 

@@ -1,10 +1,8 @@
 (ns large-example.ui.routers
-  #?(:cljs
-     (:require-macros [large-example.macros :as m]))
-  (:require #?(:clj [large-example.macros :as m])
-                    om.next
-                    untangled.client.core
-                    [large-example.ui.screens.reports :as r]))
+  (:require-macros [large-example.macros :as m])
+  (:require om.next
+            untangled.client.core
+            [large-example.ui.screens.reports :as r]))
 
 #_(m/defrouter ReportsRouter :reports (ident [this props] [(:page props) :report]) r/SummaryReport r/DetailReport)
 

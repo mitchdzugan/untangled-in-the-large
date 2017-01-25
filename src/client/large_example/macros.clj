@@ -83,14 +83,14 @@ defmutation
 (defn- emit-router [router-id sym union-sym]
    `(om.next/defui ~(vary-meta sym assoc :once true)
      ~'static untangled.client.core/InitialAppState
-     (~'initial-state [~'clz ~'params] {:id ~router-id :current-route (uc/get-initial-state ~union-sym {})})
+     (~'initial-state [~'clz ~'params] {:router/id ~router-id :router/current-route (uc/get-initial-state ~union-sym {})})
      ~'static om.next/Ident
      (~'ident [~'this ~'props] [:routers/by-id ~router-id])
      ~'static om.next/IQuery
-     (~'query [~'this] [{:current-route (om/get-query ~union-sym)}])
+     (~'query [~'this] [:router/id {:router/current-route (om/get-query ~union-sym)}])
      ~'Object
      (~'render [~'this]
-       ((om.next/factory ~union-sym) (:current-route (om/props ~'this))))))
+       ((om.next/factory ~union-sym) (:router/current-route (om/props ~'this))))))
 
 (s/def ::router-args (s/cat
                        :sym symbol?
