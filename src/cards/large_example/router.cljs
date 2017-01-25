@@ -85,9 +85,8 @@
         (dom/button #js {:onClick #(om/transact! this `[(set-route ~{:router :mine! :new-route [:screen-2 :report]})])} "screen 2")
         (ui-route router)))))
 
-#?(:cljs
-   (defcard sample
-     "A sample router:"
-     (untangled-app App)
-     {}
-     {:inspect-data true}))
+(defcard sample
+  "A sample router:"
+  (untangled-app App)
+  {}
+  {:inspect-data true})

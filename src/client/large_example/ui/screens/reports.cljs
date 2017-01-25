@@ -2,7 +2,7 @@
   (:require [om.next :as om]
             [untangled.client.mutations :as m]
             [om.dom :as dom]
-    #?(:cljs [large-example.ui.charting :as chart])
+            [large-example.ui.charting :as chart]
             [untangled.client.core :as uc]))
 
 
@@ -23,9 +23,9 @@
     (let [{:keys [label data-points width]} (om/props this)]
       (dom/div nil
         (dom/button #js {:onClick #(om/transact! this `[(extend-width)])} "Stretch")
-        #?(:cljs (chart/vcontainer #js {:width 400 :height 200 :responsive false}
-                   (chart/vchart #js {}
-                     (chart/vbar #js {:domainPadding width :data (clj->js data-points)}))))
+        (chart/vcontainer #js {:width 400 :height 200 :responsive false}
+          (chart/vchart #js {}
+            (chart/vbar #js {:domainPadding width :data (clj->js data-points)})))
         (str label)))))
 
 (def ui-summary-report (om/factory SummaryReport))

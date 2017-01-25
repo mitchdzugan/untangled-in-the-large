@@ -33,12 +33,14 @@
             (response/content-type "text/html"))
         (handler req)))))
 
-; TEMPLATE: :examples
-(defrecord AdditionalPipeline [handler]
+(defrecord RingHTML5RoutingComponent [handler]
   component/Lifecycle
   (start [this]
-    ; This is the basic pattern for composing into the existing pre-hook handler (which starts out as identity)
+    ; This is the basic pattern for composing into the existing fallback handler (which starts out as not-found)
     ; If you're sure this is the only component hooking in, you could simply set it instead.
+    ; In this case we're inserting a hander in front of the fallback to send the index page on things that look like
+    ; an attempt to load an HTML5 route (handled in the client, which means we just send index.html). This enables
+    ; HTML5 routing to happen from bookmarked URIs.
     (let [vanilla-pipeline (h/get-fallback-hook handler)]
       (h/set-fallback-hook! handler (comp vanilla-pipeline
                                           (partial wrap-html5-routes-as-index))))
@@ -49,7 +51,6 @@
   (core/make-untangled-server
     :config-path config-path
     :parser (om/parser {:read r/api-read :mutate logging-mutate})
-    ; TEMPLATE: :examples
-    :components {:pipeline (component/using                 ; add some additional wrappers to the pipeline
-                             (map->AdditionalPipeline {})
+    :components {:pipeline (component/using
+                             (map->RingHTML5RoutingComponent {})
                              [:handler])}))

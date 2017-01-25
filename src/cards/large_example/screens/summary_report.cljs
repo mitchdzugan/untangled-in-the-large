@@ -17,11 +17,10 @@
 
 (defroot Root rpt/SummaryReport)
 
-#?(:cljs
-   (defcard summary-report
-     (untangled-app routing/Root
-       :started-callback (fn [{:keys [reconciler]}]
-                           (reset! @routing/use-html5-routing false)
-                           (reset! summary-reconciler reconciler)))
-     {}
-     {:inspect-data true}))
+(defcard summary-report
+  (untangled-app routing/Root
+    :started-callback (fn [{:keys [reconciler]}]
+                        (reset! @routing/use-html5-routing false)
+                        (reset! summary-reconciler reconciler)))
+  {}
+  {:inspect-data true})
