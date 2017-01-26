@@ -47,8 +47,7 @@
                        - ref : The ident of the invoking component, if available
                        - ast : The AST of the mutation
                        - env : The complete Om Parser env"
-            :arglists '([sym docstring? arglist body])}
-defmutation
+            :arglists '([sym docstring? arglist body])} defmutation
   [& args]
   (let [{:keys [sym doc arglist body]} (conform! ::mutation-args args)
         fqsym (symbol (name (ns-name *ns*)) (name sym))
@@ -81,7 +80,7 @@ defmutation
                        `(def ~sym (js/console.log "BROKEN ROUTER!")))))
 
 (defn- emit-router [router-id sym union-sym]
-   `(om.next/defui ~(vary-meta sym assoc :once true)
+  `(om.next/defui ~(vary-meta sym assoc :once true)
      ~'static untangled.client.core/InitialAppState
      (~'initial-state [~'clz ~'params] {:router/id ~router-id :router/current-route (uc/get-initial-state ~union-sym {})})
      ~'static om.next/Ident
@@ -104,8 +103,7 @@ in cljc files. The first screen listed will be the 'default' screen that the rou
 - All screens *must* implement InitialAppState
 - All screens *must* have a UI query
 "
-            :arglists '([sym router-id ident-fn & kws-and-screens])}
-  defrouter
+            :arglists '([sym router-id ident-fn & kws-and-screens])} defrouter
   [& args]
   (let [{:keys [sym router-id ident-fn kws-and-screens]} (conform! ::router-args args)
         union-sym (symbol (str (name sym) "-Union"))]
@@ -115,7 +113,7 @@ in cljc files. The first screen listed will be the 'default' screen that the rou
 
 
 (defn- emit-root [sym child]
-   `(om.next/defui ~(vary-meta sym assoc :once true)
+  `(om.next/defui ~(vary-meta sym assoc :once true)
      ~'static untangled.client.core/InitialAppState
      (~'initial-state [~'clz ~'params] {:screen (uc/get-initial-state ~child {})})
      ~'static om.next/IQuery
@@ -135,8 +133,7 @@ for developing screens in devcards. Sample usage:
 (defroot CardRoot Screen1)
 (defcard my-card Screen1 {} {:inspect-data true})
 "
-            :arglists '([sym child])}
-  defroot
+            :arglists '([sym child])} defroot
   [& args]
   (let [{:keys [sym child]} (conform! ::root-args args)]
     (emit-root sym child)))

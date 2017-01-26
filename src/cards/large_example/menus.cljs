@@ -5,20 +5,32 @@
             [om.next :as om :refer-macros [defui]]
             [large-example.utils :as u]
             [large-example.ui.components.menus :as menu]
+            [cljs.pprint :refer [pprint]]
             [untangled.client.cards :refer-macros [untangled-app]]
             [untangled.client.mutations :as m]
             [untangled.i18n :refer-macros [tr trc]]
             [om.dom :as dom]
             [untangled.client.core :as uc]))
 
+(def a-closed-menu (menu/make-popup-menu :main-menu "Main" [(menu/make-menu-item :file "File") (menu/make-menu-item :open "Open")]))
+(def an-open-menu (menu/set-popup a-closed-menu true))
+
+(defcard popup-menu-card
+  "A popup menu (closed)"
+  (menu/ui-popup a-closed-menu))
+
+(defcard open-popup-menu-card
+  "A popup menu (open)"
+  (menu/ui-popup an-open-menu))
+
 ;; A simple simulation of an application with two menus
 (defui ActiveMenuRoot
   static uc/InitialAppState
   (initial-state [cls {:keys [id label items]}]
-    {:menu  (menu/popup-menu :test-menu "Menu Label"
-                             [(menu/menu-item :open "Open") (menu/menu-item :close "Close") (menu/menu-item :copy "Copy")])
-     :menu2 (menu/popup-menu :test-menu-2 "Other Menu"
-                             [(menu/menu-item :jump "Jump") (menu/menu-item :shout "Shout") (menu/menu-item :dance "Dance")])})
+    {:menu  (menu/make-popup-menu :test-menu "Menu Label"
+                                  [(menu/make-menu-item :open "Open") (menu/make-menu-item :close "Close") (menu/make-menu-item :copy "Copy")])
+     :menu2 (menu/make-popup-menu :test-menu-2 "Other Menu"
+                                  [(menu/make-menu-item :jump "Jump") (menu/make-menu-item :shout "Shout") (menu/make-menu-item :dance "Dance")])})
   static om/IQuery
   (query [this] [{:menu (om/get-query menu/PopupMenu)} {:menu2 (om/get-query menu/PopupMenu)}])
   Object
@@ -28,13 +40,9 @@
         (menu/ui-popup (om/computed menu {:onSelect (fn [id] (js/alert (str "You selected " id)))}))
         (menu/ui-popup (om/computed menu2 {:onSelect (fn [id] (js/alert (str "You selected " id)))}))))))
 
-(defcard popup-menu-card
-  "A popup menu (closed)"
-  (menu/ui-popup {:menu/id :main-menu :menu/label "Main"}))
+(defonce the-app (atom nil))
 
-(defcard open-popup-menu-card
-  "A popup menu (open)"
-  (menu/ui-popup {:menu/id :main-menu :menu/open? true :menu/label "Main" :menu/items [{:item/id :file :item/label "File"}]}))
+(defn log-app-state [app] (-> app :reconciler om/app-state deref pprint))
 
 (defcard active-popup-menu-card
   "An active popup in an Untangled Application, with state.
@@ -48,6 +56,7 @@
   - Selecting a menu item is detected (ID of item is sent to callback).
   - Selecting a menu item closes the menu.
   "
-  (untangled-app ActiveMenuRoot)
+  (untangled-app ActiveMenuRoot
+    :started-callback (fn [app] (reset! the-app app)))
   {}
-  {:inspect-data false})                                    ; set to true to see app state
+  {:inspect-data true})                                    ; set to true to see app state
