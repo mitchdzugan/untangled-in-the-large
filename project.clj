@@ -3,14 +3,13 @@
   :license {:name "MIT" :url "https://opensource.org/licenses/MIT"}
 
   :dependencies [[org.clojure/clojure "1.9.0-alpha14"]
-                 [org.clojure/clojurescript "1.9.293"]
+                 [org.clojure/clojurescript "1.9.456"]
                  [bidi "2.0.16"]
                  [kibu/pushy "0.3.6"]
                  [commons-io "2.5"]
 
                  [hickory "0.7.0"]
                  [navis/untangled-client "0.6.1-SNAPSHOT"]
-                 [untangled/om-css "1.0.0"]
                  [org.omcljs/om "1.0.0-alpha47"]
 
                  [cljsjs/victory "0.13.7-2"]
@@ -26,6 +25,8 @@
             [lein-doo "0.1.7"]
             [com.jakemccrary/lein-test-refresh "0.18.0"]]
 
+  :jvm-opts ^:replace ["-Xmx1g" "-server"]
+
   :doo {:build "automated-tests"
         :paths {:karma "node_modules/karma/bin/karma"}}
 
@@ -35,11 +36,11 @@
                  :with-repl    true
                  :changes-only true}
 
-  :source-paths ["src/server"]
+  :source-paths ["src/server" "src/shared"]
   :test-paths ["specs" "specs/server" "specs/config"]
   :clean-targets ^{:protect false} ["target" "resources/public/js" "resources/private"]
 
-  :figwheel {:css-dirs ["resources/public/css"]}
+  :figwheel {:server-port 8001 :css-dirs ["resources/public/css"]}
 
   :cljsbuild {:builds [{:id           "production"
                         :source-paths ["src/client"]
@@ -99,7 +100,7 @@
                        :dependencies [[binaryage/devtools "0.8.3"]
                                       [org.clojure/tools.namespace "0.2.11"]
                                       [com.cemerick/piggieback "0.2.1"]
-                                      [figwheel-sidecar "0.5.8" :exclusions [org.clojure/tools.reader]]
+                                      [figwheel-sidecar "0.5.9" :exclusions [org.clojure/tools.reader]]
                                       [devcards "0.2.2" :exclusions [org.omcljs/om]]]
                        :repl-options {:init-ns          user
                                       :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}})
