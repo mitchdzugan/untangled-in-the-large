@@ -5,7 +5,6 @@
             [untangled.client.mutations :as m]
             [bidi.bidi :as bidi]
             [pushy.core :as pushy]
-            large-example.state.mutations
             [large-example.ui.routing :as r]
             [untangled.client.logging :as log]))
 
