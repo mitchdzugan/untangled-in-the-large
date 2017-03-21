@@ -2,7 +2,6 @@
   (:require-macros
     [large-example.macros :refer [defmutation]])
   (:require [om.next :as om :refer-macros [defui]]
-            [large-example.utils :as u]
             [untangled.client.cards :refer-macros [untangled-app]]
             [untangled.client.mutations :as m]
             [om.dom :as dom]
